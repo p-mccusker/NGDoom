@@ -21,8 +21,7 @@
 //
 //-----------------------------------------------------------------------------
 
-static const char
-rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
+//static const char rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,7 +31,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
-
+#include <X11/XKBlib.h>
 #include <X11/extensions/XShm.h>
 // Had to dig up XShm.c for this one.
 // It is in the libXext, but not in the XFree86 headers.
@@ -46,7 +45,7 @@ int XShmGetEventBase( Display* dpy ); // problems with g++?
 #include <sys/socket.h>
 
 #include <netinet/in.h>
-#include <errnos.h>
+#include <errno.h>
 #include <signal.h>
 
 #include "doomstat.h"
@@ -96,86 +95,72 @@ static int	multiply=1;
 
 int xlatekey(void)
 {
+    int rc = 0;
 
-    int rc;
-
-    switch(rc = XKeycodeToKeysym(X_display, X_event.xkey.keycode, 0))
+    switch(rc = XkbKeycodeToKeysym(X_display, X_event.xkey.keycode, 0, 0))
     {
-      case XK_Left:	rc = KEY_LEFTARROW;	break;
-      case XK_Right:	rc = KEY_RIGHTARROW;	break;
-      case XK_Down:	rc = KEY_DOWNARROW;	break;
-      case XK_Up:	rc = KEY_UPARROW;	break;
-      case XK_Escape:	rc = KEY_ESCAPE;	break;
-      case XK_Return:	rc = KEY_ENTER;		break;
-      case XK_Tab:	rc = KEY_TAB;		break;
-      case XK_F1:	rc = KEY_F1;		break;
-      case XK_F2:	rc = KEY_F2;		break;
-      case XK_F3:	rc = KEY_F3;		break;
-      case XK_F4:	rc = KEY_F4;		break;
-      case XK_F5:	rc = KEY_F5;		break;
-      case XK_F6:	rc = KEY_F6;		break;
-      case XK_F7:	rc = KEY_F7;		break;
-      case XK_F8:	rc = KEY_F8;		break;
-      case XK_F9:	rc = KEY_F9;		break;
-      case XK_F10:	rc = KEY_F10;		break;
-      case XK_F11:	rc = KEY_F11;		break;
-      case XK_F12:	rc = KEY_F12;		break;
-	
+      case XK_Left:	  rc = KEY_LEFTARROW; break;
+      case XK_Right:  rc = KEY_RIGHTARROW; break;
+      case XK_Down:	  rc = KEY_DOWNARROW; break;
+      case XK_Up:     rc = KEY_UPARROW;	break;
+      case XK_Escape: rc = KEY_ESCAPE; break;
+      case XK_Return: rc = KEY_ENTER; break;
+      case XK_Tab:	  rc = KEY_TAB; break;
+      case XK_F1:	  rc = KEY_F1; break;
+      case XK_F2:	  rc = KEY_F2; break;
+      case XK_F3:	  rc = KEY_F3; break;
+      case XK_F4:	  rc = KEY_F4; break;
+      case XK_F5:	  rc = KEY_F5; break;
+      case XK_F6:	  rc = KEY_F6; break;
+      case XK_F7:	  rc = KEY_F7; break;
+      case XK_F8:	  rc = KEY_F8; break;
+      case XK_F9:	  rc = KEY_F9; break;
+      case XK_F10:	  rc = KEY_F10; break;
+      case XK_F11:	  rc = KEY_F11; break;
+      case XK_F12:	  rc = KEY_F12; break;
       case XK_BackSpace:
-      case XK_Delete:	rc = KEY_BACKSPACE;	break;
-
-      case XK_Pause:	rc = KEY_PAUSE;		break;
-
+      case XK_Delete: rc = KEY_BACKSPACE; break;
+      case XK_Pause:  rc = KEY_PAUSE; break;
       case XK_KP_Equal:
-      case XK_equal:	rc = KEY_EQUALS;	break;
-
+      case XK_equal:  rc = KEY_EQUALS; break;
       case XK_KP_Subtract:
-      case XK_minus:	rc = KEY_MINUS;		break;
-
+      case XK_minus:  rc = KEY_MINUS; break;
       case XK_Shift_L:
-      case XK_Shift_R:
-	rc = KEY_RSHIFT;
-	break;
-	
+      case XK_Shift_R: rc = KEY_RSHIFT; break;
       case XK_Control_L:
-      case XK_Control_R:
-	rc = KEY_RCTRL;
-	break;
+      case XK_Control_R: rc = KEY_RCTRL; break;
 	
       case XK_Alt_L:
       case XK_Meta_L:
       case XK_Alt_R:
-      case XK_Meta_R:
-	rc = KEY_RALT;
-	break;
+      case XK_Meta_R: rc = KEY_RALT; break;
 	
       default:
-	if (rc >= XK_space && rc <= XK_asciitilde)
-	    rc = rc - XK_space + ' ';
-	if (rc >= 'A' && rc <= 'Z')
-	    rc = rc - 'A' + 'a';
-	break;
+		if (rc >= XK_space && rc <= XK_asciitilde)
+			rc = rc - XK_space + ' ';
+		if (rc >= 'A' && rc <= 'Z')
+			rc = rc - 'A' + 'a';
+		break;
     }
 
     return rc;
-
 }
 
 void I_ShutdownGraphics(void)
 {
-  // Detach from X server
-  if (!XShmDetach(X_display, &X_shminfo))
-	    I_Error("XShmDetach() failed in I_ShutdownGraphics()");
+	static char shutDownMessage[] = "XShmDetach() failed in I_ShutdownGraphics()";
+	// Detach from X server
+	if (!XShmDetach(X_display, &X_shminfo))
+		I_Error(shutDownMessage);
 
-  // Release shared memory.
-  shmdt(X_shminfo.shmaddr);
-  shmctl(X_shminfo.shmid, IPC_RMID, 0);
+	// Release shared memory.
+	shmdt(X_shminfo.shmaddr);
+	shmctl(X_shminfo.shmid, IPC_RMID, 0);
 
-  // Paranoia.
-  image->data = NULL;
+	// Paranoia.
+	if (image)
+		image->data = NULL;
 }
-
-
 
 //
 // I_StartFrame
@@ -183,17 +168,15 @@ void I_ShutdownGraphics(void)
 void I_StartFrame (void)
 {
     // er?
-
 }
 
 static int	lastmousex = 0;
 static int	lastmousey = 0;
-boolean		mousemoved = false;
-boolean		shmFinished;
+boolean	 mousemoved = false;
+boolean	shmFinished;
 
 void I_GetEvent(void)
 {
-
     event_t event;
 
     // put event-grabbing stuff in here
@@ -269,19 +252,16 @@ void I_GetEvent(void)
 	
       case Expose:
       case ConfigureNotify:
-	break;
+		break;
 	
       default:
-	if (doShm && X_event.type == X_shmeventtype) shmFinished = true;
-	break;
+		if (doShm && X_event.type == X_shmeventtype) 
+			shmFinished = true;
+		break;
     }
-
 }
 
-Cursor
-createnullcursor
-( Display*	display,
-  Window	root )
+Cursor createnullcursor(Display* display, Window root)
 {
     Pixmap cursormask;
     XGCValues xgc;
@@ -308,7 +288,6 @@ createnullcursor
 //
 void I_StartTic (void)
 {
-
     if (!X_display)
 	return;
 
@@ -320,23 +299,20 @@ void I_StartTic (void)
     //  loose input focus within X11.
     if (grabMouse)
     {
-	if (!--doPointerWarp)
-	{
-	    XWarpPointer( X_display,
-			  None,
-			  X_mainWindow,
-			  0, 0,
-			  0, 0,
-			  X_width/2, X_height/2);
+		if (!--doPointerWarp)
+		{
+			XWarpPointer(X_display,
+				None,
+				X_mainWindow,
+				0, 0,
+				0, 0,
+				X_width/2, X_height/2);
 
-	    doPointerWarp = POINTER_WARP_COUNTDOWN;
-	}
+			doPointerWarp = POINTER_WARP_COUNTDOWN;
+		}
     }
-
     mousemoved = false;
-
 }
-
 
 //
 // I_UpdateNoBlit
@@ -482,44 +458,33 @@ void I_FinishUpdate (void)
 
     if (doShm)
     {
+		static char shmPutImageErrorMsg[] = "XShmPutImage() failed\n";
+		if (!XShmPutImage(	X_display,
+					X_mainWindow,
+					X_gc,
+					image,
+					0, 0,
+					0, 0,
+					X_width, X_height,
+					True ))
+			I_Error(shmPutImageErrorMsg);
 
-	if (!XShmPutImage(	X_display,
-				X_mainWindow,
-				X_gc,
-				image,
-				0, 0,
-				0, 0,
-				X_width, X_height,
-				True ))
-	    I_Error("XShmPutImage() failed\n");
-
-	// wait for it to finish and processes all input events
-	shmFinished = false;
-	do
-	{
-	    I_GetEvent();
-	} while (!shmFinished);
-
+		// wait for it to finish and processes all input events
+		shmFinished = false;
+		do
+		{
+			I_GetEvent();
+		} while (!shmFinished);
     }
     else
     {
+		// draw the image
+		XPutImage(X_display, X_mainWindow, X_gc, image, 0, 0, 0, 0, X_width, X_height);
 
-	// draw the image
-	XPutImage(	X_display,
-			X_mainWindow,
-			X_gc,
-			image,
-			0, 0,
-			0, 0,
-			X_width, X_height );
-
-	// sync up with server
-	XSync(X_display, False);
-
+		// sync up with server
+		XSync(X_display, False);
     }
-
 }
-
 
 //
 // I_ReadScreen
@@ -529,18 +494,16 @@ void I_ReadScreen (byte* scr)
     memcpy (scr, screens[0], SCREENWIDTH*SCREENHEIGHT);
 }
 
-
 //
 // Palette stuff.
 //
-static XColor	colors[256];
+static XColor colors[256];
 
 void UploadNewPalette(Colormap cmap, byte *palette)
 {
-
-    register int	i;
-    register int	c;
-    static boolean	firstcall = true;
+    register int i;
+    register int c;
+    static boolean firstcall = true;
 
 #ifdef __cplusplus
     if (X_visualinfo.c_class == PseudoColor && X_visualinfo.depth == 8)
@@ -584,7 +547,6 @@ void I_SetPalette (byte* palette)
     UploadNewPalette(X_cmap, palette);
 }
 
-
 //
 // This function is probably redundant,
 //  if XShmDetach works properly.
@@ -594,14 +556,13 @@ void I_SetPalette (byte* palette)
 //
 void grabsharedmemory(int size)
 {
-
-  int			key = ('d'<<24) | ('o'<<16) | ('o'<<8) | 'm';
+  int key = ('d'<<24) | ('o'<<16) | ('o'<<8) | 'm';
   struct shmid_ds	shminfo;
-  int			minsize = 320*200;
-  int			id;
-  int			rc;
+  int minsize = 320*200;
+  int id;
+  int rc = 0;
   // UNUSED int done=0;
-  int			pollution=5;
+  int pollution = 5;
   
   // try to use what was here before
   do
@@ -666,9 +627,9 @@ void grabsharedmemory(int size)
       id = shmget((key_t)key, size, IPC_CREAT|0777);
       if (id==-1)
       {
-	extern int errno;
-	fprintf(stderr, "errno=%d\n", errno);
-	I_Error("Could not get any shared memory");
+		extern int errno;
+		fprintf(stderr, "errno=%d\n", errno);
+		I_Error("Could not get any shared memory");
       }
       break;
     }
@@ -683,93 +644,92 @@ void grabsharedmemory(int size)
   X_shminfo.shmid = id;
   
   // attach to the shared memory segment
-  image->data = X_shminfo.shmaddr = shmat(id, 0, 0);
+  image->data = X_shminfo.shmaddr = (char*)(shmat(id, 0, 0));
   
-  fprintf(stderr, "shared memory id=%d, addr=0x%x\n", id,
-	  (int) (image->data));
+  fprintf(stderr, "shared memory id=%d, addr=0x%X\n", id,(int) (image->data));
 }
 
 void I_InitGraphics(void)
 {
-
-    char*		displayname;
-    char*		d;
-    int			n;
-    int			pnum;
-    int			x=0;
-    int			y=0;
+    char* displayname = NULL;
+    char* d = NULL;
+    int	n;
+    int	pnum;
+    int	x = 0;
+    int	y = 0;
     
     // warning: char format, different type arg
-    char		xsign=' ';
-    char		ysign=' ';
+    char xsign = ' ';
+    char ysign = ' ';
     
-    int			oktodraw;
-    unsigned long	attribmask;
+    int oktodraw;
+    unsigned long attribmask;
     XSetWindowAttributes attribs;
-    XGCValues		xgcvalues;
-    int			valuemask;
-    static int		firsttime=1;
+    XGCValues xgcvalues;
+    int valuemask;
+    static int firsttime = 1;
 
     if (!firsttime)
-	return;
+		return;
+
     firsttime = 0;
 
     signal(SIGINT, (void (*)(int)) I_Quit);
 
     if (M_CheckParm("-2"))
-	multiply = 2;
+		multiply = 2;
 
     if (M_CheckParm("-3"))
-	multiply = 3;
+		multiply = 3;
 
     if (M_CheckParm("-4"))
-	multiply = 4;
+		multiply = 4;
 
     X_width = SCREENWIDTH * multiply;
     X_height = SCREENHEIGHT * multiply;
 
     // check for command-line display name
     if ( (pnum=M_CheckParm("-disp")) ) // suggest parentheses around assignment
-	displayname = myargv[pnum+1];
+		displayname = myargv[pnum+1];
     else
-	displayname = 0;
+		displayname = 0;
 
     // check if the user wants to grab the mouse (quite unnice)
     grabMouse = !!M_CheckParm("-grabmouse");
 
     // check for command-line geometry
-    if ( (pnum=M_CheckParm("-geom")) ) // suggest parentheses around assignment
+    if ((pnum = M_CheckParm("-geom"))) // suggest parentheses around assignment
     {
-	// warning: char format, different type arg 3,5
-	n = sscanf(myargv[pnum+1], "%c%d%c%d", &xsign, &x, &ysign, &y);
-	
-	if (n==2)
-	    x = y = 0;
-	else if (n==6)
-	{
-	    if (xsign == '-')
-		x = -x;
-	    if (ysign == '-')
-		y = -y;
-	}
-	else
-	    I_Error("bad -geom parameter");
+		// warning: char format, different type arg 3,5
+		n = sscanf(myargv[pnum+1], "%c%d%c%d", &xsign, &x, &ysign, &y);
+		
+		if (n==2)
+			x = y = 0;
+		else if (n==6)
+		{
+			if (xsign == '-')
+				x = -x;
+			if (ysign == '-')
+				y = -y;
+		}
+		else
+			I_Error("bad -geom parameter");
     }
 
     // open the display
     X_display = XOpenDisplay(displayname);
     if (!X_display)
     {
-	if (displayname)
-	    I_Error("Could not open display [%s]", displayname);
-	else
-	    I_Error("Could not open display (DISPLAY=[%s])", getenv("DISPLAY"));
+		if (displayname)
+			I_Error("Could not open display [%s]", displayname);
+		else
+			I_Error("Could not open display (DISPLAY=[%s])", getenv("DISPLAY"));
     }
 
     // use the default visual 
     X_screen = DefaultScreen(X_display);
     if (!XMatchVisualInfo(X_display, X_screen, 8, PseudoColor, &X_visualinfo))
-	I_Error("xdoom currently only supports 256-color PseudoColor screens");
+		I_Error("xdoom currently only supports 256-color PseudoColor screens");
     X_visual = X_visualinfo.visual;
 
     // check for the MITSHM extension

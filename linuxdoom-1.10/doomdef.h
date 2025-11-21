@@ -81,15 +81,13 @@ typedef enum
 //  and unfinished. Default is synchronous.
 // Experimental asynchronous timer based is
 //  handled by SNDINTR. 
-#define SNDSERV  1
+//#define SNDSERV  0
 //#define SNDINTR  1
-
 
 // This one switches between MIT SHM (no proper mouse)
 // and XFree86 DGA (mickey sampling). The original
 // linuxdoom used SHM, which is default.
-//#define X11_DGA		1
-
+#define X11_DGA	1
 
 //
 // For resize of screen, at start of game.
@@ -113,13 +111,11 @@ typedef enum
 //(int)(SCREEN_MUL*BASE_WIDTH*INV_ASPECT_RATIO) //200
 
 
-
-
 // The maximum number of players, multiplayer/networking.
-#define MAXPLAYERS		4
+#define MAXPLAYERS	4
 
 // State updates, number of tics / second.
-#define TICRATE		35
+#define TICRATE	35
 
 // The current state of the game: whether we are
 // playing, gazing at the intermission screen,
@@ -153,9 +149,6 @@ typedef enum
     sk_nightmare
 } skill_t;
 
-
-
-
 //
 // Key cards.
 //
@@ -171,8 +164,6 @@ typedef enum
     NUMCARDS
     
 } card_t;
-
-
 
 // The defined weapons,
 //  including a marker indicating
@@ -196,7 +187,6 @@ typedef enum
 
 } weapontype_t;
 
-
 // Ammunition types defined.
 typedef enum
 {
@@ -206,7 +196,6 @@ typedef enum
     am_misl,	// Missile launcher.
     NUMAMMO,
     am_noammo	// Unlimited for chainsaw / fist.	
-
 } ammotype_t;
 
 
@@ -219,11 +208,8 @@ typedef enum
     pw_ironfeet,
     pw_allmap,
     pw_infrared,
-    NUMPOWERS
-    
+    NUMPOWERS    
 } powertype_t;
-
-
 
 //
 // Power up durations,
@@ -235,12 +221,8 @@ typedef enum
     INVULNTICS	= (30*TICRATE),
     INVISTICS	= (60*TICRATE),
     INFRATICS	= (120*TICRATE),
-    IRONTICS	= (60*TICRATE)
-    
+    IRONTICS	= (60*TICRATE)   
 } powerduration_t;
-
-
-
 
 //
 // DOOM keyboard definition.

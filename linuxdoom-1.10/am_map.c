@@ -762,20 +762,18 @@ void AM_doFollowPlayer(void)
 
     if (f_oldloc.x != plr->mo->x || f_oldloc.y != plr->mo->y)
     {
-	m_x = FTOM(MTOF(plr->mo->x)) - m_w/2;
-	m_y = FTOM(MTOF(plr->mo->y)) - m_h/2;
-	m_x2 = m_x + m_w;
-	m_y2 = m_y + m_h;
-	f_oldloc.x = plr->mo->x;
-	f_oldloc.y = plr->mo->y;
+		m_x = FTOM(MTOF(plr->mo->x)) - m_w/2;
+		m_y = FTOM(MTOF(plr->mo->y)) - m_h/2;
+		m_x2 = m_x + m_w;
+		m_y2 = m_y + m_h;
+		f_oldloc.x = plr->mo->x;
+		f_oldloc.y = plr->mo->y;
 
-	//  m_x = FTOM(MTOF(plr->mo->x - m_w/2));
-	//  m_y = FTOM(MTOF(plr->mo->y - m_h/2));
-	//  m_x = plr->mo->x - m_w/2;
-	//  m_y = plr->mo->y - m_h/2;
-
+		//  m_x = FTOM(MTOF(plr->mo->x - m_w/2));
+		//  m_y = FTOM(MTOF(plr->mo->y - m_h/2));
+		//  m_x = plr->mo->x - m_w/2;
+		//  m_y = plr->mo->y - m_h/2;
     }
-
 }
 
 //
@@ -783,7 +781,7 @@ void AM_doFollowPlayer(void)
 //
 void AM_updateLightLev(void)
 {
-    static nexttic = 0;
+    static int nexttic = 0;
     //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
     static int litelevels[] = { 0, 4, 7, 10, 12, 14, 15, 15 };
     static int litelevelscnt = 0;
@@ -791,13 +789,11 @@ void AM_updateLightLev(void)
     // Change light level
     if (amclock>nexttic)
     {
-	lightlev = litelevels[litelevelscnt++];
-	if (litelevelscnt == sizeof(litelevels)/sizeof(int)) litelevelscnt = 0;
-	nexttic = amclock + 6 - (amclock % 6);
+		lightlev = litelevels[litelevelscnt++];
+		if (litelevelscnt == sizeof(litelevels)/sizeof(int)) litelevelscnt = 0;
+			nexttic = amclock + 6 - (amclock % 6);
     }
-
 }
-
 
 //
 // Updates on Game Tick
@@ -844,21 +840,19 @@ void AM_clearFB(int color)
 // use a hash algorithm to handle  the common cases.
 //
 boolean
-AM_clipMline
-( mline_t*	ml,
-  fline_t*	fl )
+AM_clipMline(mline_t* ml, fline_t* fl)
 {
     enum
     {
-	LEFT	=1,
-	RIGHT	=2,
-	BOTTOM	=4,
-	TOP	=8
+		LEFT	=1,
+		RIGHT	=2,
+		BOTTOM	=4,
+		TOP	=8
     };
     
-    register	outcode1 = 0;
-    register	outcode2 = 0;
-    register	outside;
+    register int outcode1 = 0;
+    register int outcode2 = 0;
+    register int outside;
     
     fpoint_t	tmp;
     int		dx;
@@ -875,30 +869,30 @@ AM_clipMline
     
     // do trivial rejects and outcodes
     if (ml->a.y > m_y2)
-	outcode1 = TOP;
+		outcode1 = TOP;
     else if (ml->a.y < m_y)
-	outcode1 = BOTTOM;
+		outcode1 = BOTTOM;
 
     if (ml->b.y > m_y2)
-	outcode2 = TOP;
+		outcode2 = TOP;
     else if (ml->b.y < m_y)
-	outcode2 = BOTTOM;
+		outcode2 = BOTTOM;
     
     if (outcode1 & outcode2)
-	return false; // trivially outside
+		return false; // trivially outside
 
     if (ml->a.x < m_x)
-	outcode1 |= LEFT;
+		outcode1 |= LEFT;
     else if (ml->a.x > m_x2)
-	outcode1 |= RIGHT;
+		outcode1 |= RIGHT;
     
     if (ml->b.x < m_x)
-	outcode2 |= LEFT;
+		outcode2 |= LEFT;
     else if (ml->b.x > m_x2)
-	outcode2 |= RIGHT;
+		outcode2 |= RIGHT;
     
     if (outcode1 & outcode2)
-	return false; // trivially outside
+		return false; // trivially outside
 
     // transform to frame-buffer coordinates.
     fl->a.x = CXMTOF(ml->a.x);
@@ -910,7 +904,7 @@ AM_clipMline
     DOOUTCODE(outcode2, fl->b.x, fl->b.y);
 
     if (outcode1 & outcode2)
-	return false;
+		return false;
 
     while (outcode1 | outcode2)
     {
@@ -989,16 +983,16 @@ AM_drawFline
     register int ay;
     register int d;
     
-    static fuck = 0;
+    static int fuck = 0;
 
     // For debugging only
-    if (      fl->a.x < 0 || fl->a.x >= f_w
+    if (  fl->a.x < 0 || fl->a.x >= f_w
 	   || fl->a.y < 0 || fl->a.y >= f_h
 	   || fl->b.x < 0 || fl->b.x >= f_w
 	   || fl->b.y < 0 || fl->b.y >= f_h)
     {
-	fprintf(stderr, "fuck %d \r", fuck++);
-	return;
+		fprintf(stderr, "fuck %d \r", fuck++);
+		return;
     }
 
 #define PUTDOT(xx,yy,cc) fb[(yy)*f_w+(xx)]=(cc)

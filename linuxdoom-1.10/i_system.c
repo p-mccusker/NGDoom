@@ -23,13 +23,13 @@
 static const char
 rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <stdarg.h>
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "doomdef.h"
@@ -45,11 +45,7 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 #endif
 #include "i_system.h"
 
-
-
-
 int	mb_used = 6;
-
 
 void
 I_Tactile
@@ -79,8 +75,6 @@ byte* I_ZoneBase (int*	size)
     return (byte *) malloc (*size);
 }
 
-
-
 //
 // I_GetTime
 // returns time in 1/70th second tics
@@ -106,7 +100,9 @@ int  I_GetTime (void)
 //
 void I_Init (void)
 {
+#ifdef USESOUND
     I_InitSound();
+#endif
     //  I_InitGraphics();
 }
 
@@ -116,12 +112,39 @@ void I_Init (void)
 void I_Quit (void)
 {
     D_QuitNetGame ();
+#ifdef USESOUND
     I_ShutdownSound();
     I_ShutdownMusic();
+#endif
     M_SaveDefaults ();
     I_ShutdownGraphics();
     exit(0);
 }
+
+#if 0
+//typedef struct timespec timespec_t;
+struct timespec
+{
+#ifdef __USE_TIME64_REDIRECTS
+  __time64_t tv_sec;		/* Seconds.  */
+#else
+  __time_t tv_sec;		/* Seconds.  */
+#endif
+#if __WORDSIZE == 64 \
+  || (defined __SYSCALL_WORDSIZE && __SYSCALL_WORDSIZE == 64) \
+  || (__TIMESIZE == 32 && !defined __USE_TIME64_REDIRECTS)
+  __syscall_slong_t tv_nsec;	/* Nanoseconds.  */
+#else
+# if __BYTE_ORDER == __BIG_ENDIAN
+  int: 32;           /* Padding.  */
+  long int tv_nsec;  /* Nanoseconds.  */
+# else
+  long int tv_nsec;  /* Nanoseconds.  */
+  int: 32;           /* Padding.  */
+# endif
+#endif
+};
+#endif
 
 void I_WaitVBL(int count)
 {
@@ -131,7 +154,10 @@ void I_WaitVBL(int count)
 #ifdef SUN
     sleep(0);
 #else
-    usleep (count * (1000000/70) );                                
+    //usleep (count * (1000000/70) );
+    struct timespec remaining;
+    struct timespec request;
+    int response = nanosleep(&request, &remaining);                         
 #endif
 #endif
 }
@@ -174,7 +200,7 @@ void I_Error (char *error, ...)
 
     // Shutdown. Here might be other errors.
     if (demorecording)
-	G_CheckDemoStatus();
+	    G_CheckDemoStatus();
 
     D_QuitNetGame ();
     I_ShutdownGraphics();
